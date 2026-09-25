@@ -62,7 +62,7 @@ const activities = [
 
 const icons = {
   arrow: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>`,
-  plane: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5L21 16Z" /></svg>`,
+  heart: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-4.35-9.33-8.27C.81 9.6 2.2 5.5 5.82 4.46 8.05 3.82 10.2 4.7 12 6.6c1.8-1.9 3.95-2.78 6.18-2.14 3.62 1.04 5.01 5.14 3.15 8.27C19 16.65 12 21 12 21Z" /></svg>`,
 };
 
 const dodgeLines = [
@@ -115,16 +115,16 @@ function showIntro() {
   state.futureSlot = false;
   setProgress(1, "REQUEST RECEIVED");
   swapScreen(`
-    <p class="eyebrow">Chandigarh Hosting Department</p>
+    <p class="eyebrow">Official Date Planning Department</p>
     <h1>A very important <span class="script-word">booking request.</span></h1>
     <p class="lead">
-      One charming visitor is considering a heroic journey from Bangalore.
+      One charming date is waiting to happen.
       Your official response is required.
     </p>
-    <div class="trip-ticket" aria-label="Travel route from Bangalore to Chandigarh">
-      <div class="city"><strong>Bangalore</strong><span>Jas departs</span></div>
-      <div class="ticket-route">${icons.plane}</div>
-      <div class="city"><strong>Chandigarh</strong><span>You approve</span></div>
+    <div class="trip-ticket" aria-label="Date pairing for you and Jas">
+      <div class="city"><strong>You</strong><span>Choose the vibe</span></div>
+      <div class="ticket-route">${icons.heart}</div>
+      <div class="city"><strong>Jas</strong><span>Brings the charm</span></div>
     </div>
     <div class="decision-area">
       <button class="primary-button" type="button" data-action="review">
@@ -158,9 +158,9 @@ function showSeeJas() {
 function showDayPicker() {
   setProgress(3, "CHOOSE YOUR PACKAGE");
   swapScreen(`
-    <p class="eyebrow">Host selection</p>
-    <h2>How many days are you willing to host <span class="script-word">him?</span></h2>
-    <p class="lead">Select carefully. Bangalore is quite far, and Jas packs at least three days' worth of charm.</p>
+    <p class="eyebrow">Date length</p>
+    <h2>How much time are you booking with <span class="script-word">him?</span></h2>
+    <p class="lead">Select carefully. Jas packs at least three days' worth of charm.</p>
     <div class="days-grid">
       <button class="day-button" type="button" data-days="1">1 day<small>blink and it's gone</small></button>
       <button class="day-button" type="button" data-days="2">2 days<small>getting warmer</small></button>
@@ -180,7 +180,7 @@ function showDayPicker() {
 const reactions = {
   1: {
     eyebrow: "Mathematical emergency",
-    title: "Can Bangalore-to-Chandigarh fit into <span class=\"script-word\">one day?</span>",
+    title: "Can all this fun fit into <span class=\"script-word\">one day?</span>",
     message:
       "Physics says no. One day is just arrival chai, one argument about food, and then an unnecessarily dramatic goodbye. Terrible planning.",
     accept: "Fine, make it 3 days",
@@ -203,7 +203,7 @@ function showReaction(choice) {
     <p class="eyebrow">${reaction.eyebrow}</p>
     <h2>${reaction.title}</h2>
     <div class="reaction-box">
-      <strong>Official note from the Jas Travel Department</strong>
+      <strong>Official note from the Jas Date Department</strong>
       <p>${reaction.message}</p>
     </div>
     <div class="decision-area">
@@ -285,7 +285,7 @@ function showConfirmation() {
   const finalLine = state.selectedDays === "lifetime"
     ? "The lifetime package has been accepted. The portal is impressed, slightly emotional, and checking the closet space."
     : Number(state.selectedDays) === 4
-      ? "Four excellent days. The Chandigarh Hosting Department has officially upgraded you to premium-host status."
+      ? "Four excellent days. The Date Planning Department has officially upgraded you to premium-date status."
       : "A suspiciously perfect amount of time. Jas promises good conversation and only a manageable level of chaos.";
 
   swapScreen(`
@@ -294,13 +294,13 @@ function showConfirmation() {
     <p class="lead">${finalLine}</p>
     <div class="receipt" aria-label="Booking details">
       <div class="receipt-row"><span>Guest</span><strong>Jas</strong></div>
-      <div class="receipt-row"><span>Route</span><strong>Bangalore → Chandigarh</strong></div>
+      <div class="receipt-row"><span>Pairing</span><strong>You + Jas</strong></div>
       <div class="receipt-row"><span>Duration</span><strong>${durationLabel}</strong></div>
       <div class="receipt-row"><span>Our plans</span><strong>${activitiesLabel}</strong></div>
       <div class="receipt-row"><span>Smile tax</span><strong>${state.smileChoice}</strong></div>
       <div class="receipt-row"><span>Future pampering</span><strong id="futureStatus">Slots available after this stay</strong></div>
     </div>
-    <span class="stamp">Host approved</span>
+    <span class="stamp">Date approved</span>
     <div class="future-card">
       <span class="future-kicker">Future access now open</span>
       <h3>If you want to be pampered like this again...</h3>
@@ -352,7 +352,7 @@ async function copyReceipt() {
     ? "Lifetime"
     : `${state.selectedDays} ${Number(state.selectedDays) === 1 ? "day" : "days"}`;
   const future = state.futureSlot ? "Future pampering priority requested" : "Future slots available";
-  const receipt = `Booking confirmed: Jas | Bangalore → Chandigarh | Duration: ${duration} | Plans: ${state.selectedActivities.join(", ")} | Smile tax: ${state.smileChoice} | ${future}.`;
+  const receipt = `Booking confirmed: You + Jas | Duration: ${duration} | Plans: ${state.selectedActivities.join(", ")} | Smile tax: ${state.smileChoice} | ${future}.`;
 
   try {
     await navigator.clipboard.writeText(receipt);
@@ -429,18 +429,18 @@ async function createBookingCardBlob() {
   context.textAlign = "right";
   context.fillStyle = "#78515f";
   context.font = "700 22px Arial, sans-serif";
-  context.fillText("BLR  →  IXC", 948, 158);
+  context.fillText("YOU  +  JAS", 948, 158);
 
   context.textAlign = "left";
   context.fillStyle = "#b31f47";
   context.font = "700 20px Arial, sans-serif";
-  context.fillText("HOST-APPROVED BOOKING", 112, 268);
+  context.fillText("DATE-APPROVED BOOKING", 112, 268);
   context.fillStyle = "#3d1d2a";
   context.font = "700 62px Arial, sans-serif";
   context.fillText("Jas has been booked.", 112, 348);
   context.fillStyle = "#78515f";
   context.font = "400 27px Arial, sans-serif";
-  context.fillText("Bangalore to Chandigarh — officially worth the trip.", 112, 400);
+  context.fillText("Wherever you are — officially worth the date.", 112, 400);
 
   context.fillStyle = "#fff1f2";
   roundedCanvasRect(context, 112, 456, 856, 148, 28);
