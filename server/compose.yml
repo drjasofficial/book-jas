@@ -6,6 +6,13 @@ services:
     env_file: ${BOOK_JAS_ENV_FILE:-.env}
     ports:
       - "127.0.0.1:8787:8787"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.book-jas-api.rule=Host(`book-api.medax.ai`)"
+      - "traefik.http.routers.book-jas-api.entrypoints=websecure"
+      - "traefik.http.routers.book-jas-api.tls=true"
+      - "traefik.http.routers.book-jas-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.book-jas-api.loadbalancer.server.port=8787"
     volumes:
       - book-jas-data:/data
 
