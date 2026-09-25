@@ -4,6 +4,14 @@ const stepCount = document.querySelector("#stepCount");
 const stepLabel = document.querySelector("#stepLabel");
 const confetti = document.querySelector("#confetti");
 const toast = document.querySelector("#toast");
+const apiBaseUrl = String(window.BOOK_JAS_CONFIG?.apiBaseUrl || "").replace(/\/$/, "");
+const trackingEnabled = Boolean(apiBaseUrl);
+const pageOpenedAt = new Date().toISOString();
+
+function createSessionId() {
+  if (typeof globalThis.crypto?.randomUUID === "function") return globalThis.crypto.randomUUID();
+  return `session-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+}
 
 const state = {
   step: 1,
@@ -13,6 +21,12 @@ const state = {
   futureSlot: false,
   dodges: 0,
   lastEscapeAt: 0,
+  sessionId: createSessionId(),
+  visitorName: "",
+  trackingConsent: false,
+  submitted: false,
+  furthestStep: 1,
+  stepTimeline: [{ step: 1, label: "REQUEST RECEIVED", at: pageOpenedAt }],
 };
 
 const activities = [
@@ -79,10 +93,19 @@ const dodgeLines = [
 ];
 
 function setProgress(step, label) {
+  const changed = state.step !== step || stepLabel.textContent !== label;
   state.step = step;
+  state.furthestStep = Math.max(state.furthestStep, step);
   stepCount.textContent = `${String(step).padStart(2, "0")} / 06`;
   stepLabel.textContent = label;
   progressBar.style.width = `${(step / 6) * 100}%`;
+
+  if (changed) {
+    state.stepTimeline.push({ step, label, at: new Date().toISOString() });
+    if (state.trackingConsent) {
+      sendTrackingEvent("step_viewed", { step, label });
+    }
+  }
 }
 
 function swapScreen(markup) {
@@ -113,7 +136,37 @@ function showIntro() {
   state.selectedActivities = [];
   state.smileChoice = "";
   state.futureSlot = false;
+  state.submitted = false;
   setProgress(1, "REQUEST RECEIVED");
+
+  const startControls = trackingEnabled
+    ? `
+      <div class="visitor-details">
+        <label for="visitorName">Your name</label>
+        <input id="visitorName" type="text" maxlength="80" autocomplete="name" placeholder="What should Jas call you?" />
+        <label class="consent-check" for="trackingConsent">
+          <input id="trackingConsent" type="checkbox" />
+          <span>I agree to send Jas my name, choices, approximate IP location, device summary, and progress through this booking. No precise GPS location is requested.</span>
+        </label>
+      </div>
+      <div class="decision-area">
+        <button class="primary-button" type="button" data-action="start-tracked-booking" disabled>
+          Review Jas's application ${icons.arrow}
+        </button>
+        ${playfulNo("No, looks suspicious", "review")}
+      </div>
+      <p class="tiny-note">Nothing is sent until you enter your name and agree.</p>
+    `
+    : `
+      <div class="decision-area">
+        <button class="primary-button" type="button" data-action="review">
+          Review Jas's application ${icons.arrow}
+        </button>
+        ${playfulNo("No, looks suspicious", "review")}
+      </div>
+      <p class="tiny-note">Application fee: one smile. Already received.</p>
+    `;
+
   swapScreen(`
     <p class="eyebrow">Official Date Planning Department</p>
     <h1>A very important <span class="script-word">booking request.</span></h1>
@@ -126,13 +179,7 @@ function showIntro() {
       <div class="ticket-route">${icons.heart}</div>
       <div class="city"><strong>Jas</strong><span>Brings the charm</span></div>
     </div>
-    <div class="decision-area">
-      <button class="primary-button" type="button" data-action="review">
-        Review Jas's application ${icons.arrow}
-      </button>
-      ${playfulNo("No, looks suspicious", "review")}
-    </div>
-    <p class="tiny-note">Application fee: one smile. Already received.</p>
+    ${startControls}
   `);
 }
 
@@ -282,6 +329,15 @@ function showConfirmation() {
     ? "Lifetime (bold choice)"
     : `${state.selectedDays} ${Number(state.selectedDays) === 1 ? "day" : "days"}`;
   const activitiesLabel = escapeHtml(state.selectedActivities.join(", "));
+  const visitorLabel = state.visitorName
+    ? `<div class="receipt-row"><span>Booked by</span><strong>${escapeHtml(state.visitorName)}</strong></div>`
+    : "";
+  const submissionMessage = trackingEnabled && state.trackingConsent
+    ? `<p id="serverSubmissionStatus" class="submission-status" role="status">Sending your choices securely to Jas...</p>`
+    : "";
+  const shareExplanation = trackingEnabled && state.trackingConsent
+    ? "Your choices are sent to Jas through the secure booking server. You can also create a booking-card image to keep or share."
+    : "Nothing is sent or saved automatically. Tap below to create a booking-card image, then share it with Jas. If sharing is unavailable, the image will download for you.";
   const finalLine = state.selectedDays === "lifetime"
     ? "The lifetime package has been accepted. The portal is impressed, slightly emotional, and checking the closet space."
     : Number(state.selectedDays) === 4
@@ -293,6 +349,7 @@ function showConfirmation() {
     <h2>Jas has been <span class="script-word">booked.</span></h2>
     <p class="lead">${finalLine}</p>
     <div class="receipt" aria-label="Booking details">
+      ${visitorLabel}
       <div class="receipt-row"><span>Guest</span><strong>Jas</strong></div>
       <div class="receipt-row"><span>Pairing</span><strong>You + Jas</strong></div>
       <div class="receipt-row"><span>Duration</span><strong>${durationLabel}</strong></div>
@@ -312,7 +369,8 @@ function showConfirmation() {
     <div class="share-card">
       <span class="future-kicker">Your selections are ready</span>
       <h3>Send this booking to Jas</h3>
-      <p>Nothing is sent or saved automatically. Tap below to create a booking-card image, then share it with Jas. If sharing is unavailable, the image will download for you.</p>
+      ${submissionMessage}
+      <p>${shareExplanation}</p>
       <button class="primary-button" type="button" data-action="share-booking">
         Send booking to Jas ${icons.arrow}
       </button>
@@ -324,6 +382,7 @@ function showConfirmation() {
   `);
 
   celebrate();
+  submitBooking();
 }
 
 function celebrate() {
@@ -345,6 +404,114 @@ function showToast(message) {
   toast.textContent = message;
   toast.classList.add("visible");
   window.setTimeout(() => toast.classList.remove("visible"), 2200);
+}
+
+function getDeviceSummary() {
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  return {
+    userAgent: navigator.userAgent,
+    platform: navigator.userAgentData?.platform || navigator.platform || "unknown",
+    language: navigator.language || "unknown",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown",
+    screen: `${window.screen.width}x${window.screen.height}`,
+    viewport: `${window.innerWidth}x${window.innerHeight}`,
+    touchPoints: navigator.maxTouchPoints || 0,
+    connection: connection?.effectiveType || "unknown",
+    referrer: document.referrer || "direct",
+  };
+}
+
+function trackingPayload(eventType, details = {}) {
+  return {
+    sessionId: state.sessionId,
+    eventType,
+    occurredAt: new Date().toISOString(),
+    openedAt: pageOpenedAt,
+    name: state.visitorName,
+    consent: state.trackingConsent,
+    pageUrl: window.location.href,
+    details,
+  };
+}
+
+async function sendTrackingEvent(eventType, details = {}, useBeacon = false) {
+  if (!trackingEnabled || !state.trackingConsent) return false;
+
+  const payload = JSON.stringify(trackingPayload(eventType, details));
+  const endpoint = `${apiBaseUrl}/api/events`;
+
+  if (useBeacon && typeof navigator.sendBeacon === "function") {
+    return navigator.sendBeacon(
+      endpoint,
+      new Blob([payload], { type: "text/plain;charset=UTF-8" }),
+    );
+  }
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: payload,
+      mode: "cors",
+      keepalive: true,
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+function updateStartButton() {
+  const nameInput = document.querySelector("#visitorName");
+  const consentInput = document.querySelector("#trackingConsent");
+  const startButton = document.querySelector('[data-action="start-tracked-booking"]');
+  if (!nameInput || !consentInput || !startButton) return;
+  startButton.disabled = nameInput.value.trim().length < 2 || !consentInput.checked;
+}
+
+async function startTrackedBooking(button) {
+  const nameInput = document.querySelector("#visitorName");
+  const consentInput = document.querySelector("#trackingConsent");
+  const name = nameInput?.value.trim().replace(/\s+/g, " ").slice(0, 80) || "";
+
+  if (name.length < 2 || !consentInput?.checked) {
+    showToast("Add your name and agree before continuing.");
+    return;
+  }
+
+  state.visitorName = name;
+  state.trackingConsent = true;
+  button.disabled = true;
+  button.textContent = "Starting securely...";
+
+  await sendTrackingEvent("session_started", {
+    device: getDeviceSummary(),
+    firstStep: 1,
+  });
+  showSeeJas();
+}
+
+async function submitBooking() {
+  if (!trackingEnabled || !state.trackingConsent || state.submitted) return;
+  state.submitted = true;
+
+  const status = document.querySelector("#serverSubmissionStatus");
+  const saved = await sendTrackingEvent("booking_submitted", {
+    duration: state.selectedDays,
+    activities: state.selectedActivities,
+    smileChoice: state.smileChoice,
+    futureSlot: state.futureSlot,
+    furthestStep: state.furthestStep,
+    stepTimeline: state.stepTimeline,
+    device: getDeviceSummary(),
+  });
+
+  if (status) {
+    status.textContent = saved
+      ? "Sent securely to Jas. You can still share the booking card below."
+      : "The server could not be reached. Your choices were not saved—please use the share button below.";
+    status.classList.toggle("submission-error", !saved);
+  }
 }
 
 async function copyReceipt() {
@@ -701,6 +868,7 @@ function reserveFutureSlot(button) {
   button.textContent = "Future pampering slot saved";
   const status = document.querySelector("#futureStatus");
   if (status) status.textContent = "Priority slot requested";
+  sendTrackingEvent("booking_updated", { futureSlot: true });
   showToast("Future Jas access saved. Current booking stays confirmed.");
 }
 
@@ -742,6 +910,7 @@ screen.addEventListener("click", (event) => {
   }
 
   if (target.dataset.action === "review") showSeeJas();
+  if (target.dataset.action === "start-tracked-booking") startTrackedBooking(target);
   if (target.dataset.action === "yes") showDayPicker();
   if (target.dataset.action === "confirm-three") showActivities(3);
   if (target.dataset.action === "activities-confirm") showSmileChoice();
@@ -758,11 +927,28 @@ screen.addEventListener("click", (event) => {
   }
 });
 
+screen.addEventListener("input", (event) => {
+  if (event.target.matches("#visitorName, #trackingConsent")) updateStartButton();
+});
+
+screen.addEventListener("change", (event) => {
+  if (event.target.matches("#visitorName, #trackingConsent")) updateStartButton();
+});
+
 screen.addEventListener("keydown", (event) => {
   if (event.key === "Enter" && event.target.matches("#customActivityInput")) {
     event.preventDefault();
     addCustomActivities();
   }
+});
+
+window.addEventListener("pagehide", () => {
+  sendTrackingEvent("session_left", {
+    lastStep: state.step,
+    furthestStep: state.furthestStep,
+    completed: state.submitted,
+    timeOnPageSeconds: Math.max(0, Math.round((Date.now() - Date.parse(pageOpenedAt)) / 1000)),
+  }, true);
 });
 
 showIntro();

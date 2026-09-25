@@ -1,0 +1,13 @@
+services:
+  book-jas-api:
+    build: .
+    container_name: book-jas-api
+    restart: unless-stopped
+    env_file: ${BOOK_JAS_ENV_FILE:-.env}
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - book-jas-data:/data
+
+volumes:
+  book-jas-data:
