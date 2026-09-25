@@ -20,6 +20,7 @@
 html {
   min-width: 320px;
   background: #fff5ed;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -41,6 +42,7 @@ a {
 
 button {
   font: inherit;
+  touch-action: manipulation;
 }
 
 .ambient {
@@ -693,6 +695,8 @@ a:focus-visible {
 }
 
 .receipt-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
   text-align: right;
   font-size: 0.9rem;
 }
@@ -852,24 +856,129 @@ a:focus-visible {
 }
 
 @media (max-width: 520px) {
+  body {
+    min-height: 100svh;
+  }
+
   .page-shell {
-    width: min(100% - 20px, 680px);
-    padding: 14px 0;
+    width: 100%;
+    min-height: 100svh;
+    padding: max(10px, env(safe-area-inset-top)) 10px max(14px, env(safe-area-inset-bottom));
     justify-content: flex-start;
   }
 
   .topbar {
-    margin: 2px 4px 12px;
+    margin: 2px 4px 10px;
+  }
+
+  .brand {
+    gap: 8px;
+    font-size: 0.9rem;
+  }
+
+  .brand-mark {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+
+  .route-pill {
+    gap: 6px;
+    padding: 7px 9px;
+    font-size: 0.65rem;
   }
 
   .booking-card {
-    min-height: calc(100vh - 120px);
-    padding: 24px 20px 28px;
-    border-radius: 26px;
+    min-height: calc(100svh - 76px);
+    padding: 22px 18px 24px;
+    border-radius: 24px;
   }
 
   .progress-wrap {
-    margin-bottom: 38px;
+    margin-bottom: 30px;
+  }
+
+  .progress-copy {
+    font-size: 0.62rem;
+    letter-spacing: 0.09em;
+  }
+
+  .eyebrow {
+    gap: 6px;
+    font-size: 0.64rem;
+    letter-spacing: 0.1em;
+  }
+
+  .eyebrow::before {
+    width: 16px;
+  }
+
+  h1 {
+    font-size: clamp(2.25rem, 12vw, 3.15rem);
+  }
+
+  h2 {
+    font-size: clamp(1.85rem, 10vw, 2.55rem);
+  }
+
+  .lead {
+    margin: 14px 0 21px;
+    font-size: 0.96rem;
+    line-height: 1.55;
+  }
+
+  .trip-ticket {
+    gap: 8px;
+    margin: 21px 0;
+    padding: 14px 12px;
+  }
+
+  .city strong {
+    font-size: 1rem;
+  }
+
+  .city span {
+    font-size: 0.67rem;
+  }
+
+  .ticket-route {
+    gap: 3px;
+  }
+
+  .ticket-route::before,
+  .ticket-route::after {
+    width: 10px;
+  }
+
+  .visitor-details,
+  .custom-activity-panel,
+  .future-card,
+  .share-card {
+    padding: 16px;
+  }
+
+  .visitor-details {
+    margin: 19px 0 14px;
+  }
+
+  .consent-check {
+    font-size: 0.7rem;
+  }
+
+  .decision-area {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .decision-area .primary-button,
+  .decision-area .secondary-button {
+    width: 100%;
+    flex: none;
+  }
+
+  .decision-area .evade-button.escaped {
+    width: auto;
   }
 
   .days-grid {
@@ -879,6 +988,12 @@ a:focus-visible {
   .activity-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
+  }
+
+  .activity-chip {
+    min-height: 48px;
+    padding: 9px;
+    font-size: 0.76rem;
   }
 
   .smile-options {
@@ -902,18 +1017,46 @@ a:focus-visible {
     width: 100%;
   }
 
-  .decision-area .primary-button {
-    width: auto;
-    flex: 1 1 190px;
-  }
-
-  .decision-area .evade-button,
-  .button-row .evade-button {
-    width: auto;
+  .receipt-row {
+    display: grid;
+    grid-template-columns: minmax(76px, 0.7fr) minmax(0, 1.3fr);
+    gap: 12px;
+    padding: 12px 14px;
   }
 
   .footer-note {
+    margin-top: 13px;
     padding: 0 18px;
+  }
+}
+
+@media (max-width: 360px) {
+  .booking-card {
+    padding-inline: 16px;
+    border-radius: 20px;
+  }
+
+  .activity-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .smile-choice {
+    min-height: 98px;
+    padding: 15px;
+  }
+
+  .route-pill {
+    letter-spacing: 0.04em;
+  }
+}
+
+@media (hover: none) {
+  .primary-button:hover,
+  .secondary-button:hover,
+  .day-button:hover,
+  .activity-chip:hover,
+  .smile-choice:hover {
+    transform: none;
   }
 }
 

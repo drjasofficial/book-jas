@@ -115,6 +115,14 @@ function swapScreen(markup) {
   screen.innerHTML = markup;
   screen.style.animation = "";
   screen.querySelector("button:not(.evade-button), a")?.focus({ preventScroll: true });
+
+  if (window.matchMedia("(max-width: 720px)").matches) {
+    window.requestAnimationFrame(() => {
+      const card = document.querySelector(".booking-card");
+      const cardTop = card.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: Math.max(0, cardTop - 8), behavior: "auto" });
+    });
+  }
 }
 
 function escapeHtml(value) {
@@ -447,6 +455,9 @@ async function sendTrackingEvent(eventType, details = {}, useBeacon = false) {
     );
   }
 
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 5000);
+
   try {
     const response = await fetch(endpoint, {
       method: "POST",
@@ -454,10 +465,13 @@ async function sendTrackingEvent(eventType, details = {}, useBeacon = false) {
       body: payload,
       mode: "cors",
       keepalive: true,
+      signal: controller.signal,
     });
     return response.ok;
   } catch {
     return false;
+  } finally {
+    window.clearTimeout(timeoutId);
   }
 }
 
@@ -469,7 +483,7 @@ function updateStartButton() {
   startButton.disabled = nameInput.value.trim().length < 2 || !consentInput.checked;
 }
 
-async function startTrackedBooking(button) {
+function startTrackedBooking(button) {
   const nameInput = document.querySelector("#visitorName");
   const consentInput = document.querySelector("#trackingConsent");
   const name = nameInput?.value.trim().replace(/\s+/g, " ").slice(0, 80) || "";
@@ -484,7 +498,7 @@ async function startTrackedBooking(button) {
   button.disabled = true;
   button.textContent = "Starting securely...";
 
-  await sendTrackingEvent("session_started", {
+  sendTrackingEvent("session_started", {
     device: getDeviceSummary(),
     firstStep: 1,
   });
