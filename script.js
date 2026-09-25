@@ -154,7 +154,7 @@ function showIntro() {
         <input id="visitorName" type="text" maxlength="80" autocomplete="name" placeholder="What should Jas call you?" />
         <label class="consent-check" for="trackingConsent">
           <input id="trackingConsent" type="checkbox" />
-          <span>I agree to send Jas my name, choices, approximate IP location, device summary, and progress through this booking. No precise GPS location is requested.</span>
+          <span>Is jas cute.</span>
         </label>
       </div>
       <div class="decision-area">
